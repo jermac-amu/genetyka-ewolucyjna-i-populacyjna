@@ -1,1 +1,1 @@
-# genetyka-ewolucyjna-i-populacyjna
+# Genetyka ewolucyjna i populacyjna
