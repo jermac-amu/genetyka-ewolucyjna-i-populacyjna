@@ -1,0 +1,64 @@
+SAMPLES=/home/mkonczal/Teaching/GEiP/Data/SamplesLibraries.txt
+FASTQ_DIR=/home/mkonczal/Teaching/GEiP/Data/Fastq
+REF=/home/mkonczal/Teaching/GEiP/Data/Reference/SBS_final.scaffolds.fasta
+
+f1=SRR7054140_pass_1.fastq.gz
+f2=SRR7054140_pass_2.fastq.gz
+f3=SRR7054154_pass_1.fastq.gz
+f4=SRR7054154_pass_2.fastq.gz
+
+Lokalizacja:
+/NVME/home/st6/GEiP/Lab1
+
+Wycięcie scaffold2:
+start=$(cat /home/mkonczal/Teaching/GEiP/Data/Reference/SBS_final.scaffolds.fasta | grep -n "scaffold2$" | cut -d ":" -f1)
+end=$(cat /home/mkonczal/Teaching/GEiP/Data/Reference/SBS_final.scaffolds.fasta | grep -n "scaffold3$" | cut -d ":" -f1)
+cat /home/mkonczal/Teaching/GEiP/Data/Reference/SBS_final.scaffolds.fasta | head -n $(expr 354863 - 1) | tail -n "$(expr 354863 - 177198)" > ./scaffold2.fasta
+
+
+Kontrola jakości:
+fastqc $f1 $f2
+
+Filtrowanie:
+fastp -i $f1 -I $f2 -o SRR7054140_pass_1.filt.fastq -O SRR7054140_pass_2.filt.fastq
+fastp -i $f3 -I $f4 -o SRR7054154_pass_1.filt.fastq -O SRR7054154_pass_2.filt.fastq
+
+Ponowna kontrola jakości:
+fastqc *.filt.fastq
+
+
+Po kontroli poprawiła się jakości sekwencji, a także znacznie zmniejszona została liczba sekwencji z zanieczyszczenia starterem. Natomiast został nieco zaburzony rozkład długości sekwencji.
+SRR7054140_pass_1_fastqc.html vs SRR7054140_pass_1.filt_fastqc.html
+SRR7054140_pass_2_fastqc.html vs SRR7054140_pass_2.filt_fastqc.html
+
+
+Indeksowanie:
+bwa index scaffold2.fasta
+
+Mapowanie:
+bwa mem -t 5 -R '@RG\tID:SRR7054140\tSM:C_pyg_22\tLB:SRR7054140\tPL:ILLUMINA\tPU:lib1_unit' scaffold2.fasta SRR7054140_pass_1.filt.fastq SRR7054140_pass_2.filt.fastq | samtools view -F 4 -o SRR7054140.Mapped.bam
+bwa mem -t 5 -R '@RG\tID:SRR7054154\tSM:C_pyg_22\tLB:SRR7054154\tPL:ILLUMINA\tPU:lib1_unit' scaffold2.fasta SRR7054154_pass_1.filt.fastq SRR7054154_pass_2.filt.fastq | samtools view -Sb -F 4 -o SRR7054154.Mapped.bam
+
+Parametr -R bwa mem wybiera odczyty o konkretnym nagłówku.
+Parametr -F samtools view wybiera odczyty bez flag określonych przez podaną liczbę.
+Operator | przekazuje STDOUT pierwszego poprzedzającego polecenia do STDIN następnego polecenia, więc w naszym przypadku, przekazuje wyniki z bwa mem jako dane wejściowe do samtools view.
+
+
+Sortowanie:
+samtools sort -T bam SRR7054140.Mapped.bam > SRR7054140.Mapped.sorted.bam
+samtools sort -T bam SRR7054154.Mapped.bam > SRR7054154.Mapped.sorted.bam
+
+Usuwanie duplikatów:
+picard MarkDuplicates REMOVE_DUPLICATES=true REMOVE_SEQUENCING_DUPLICATES=true AS=true I=SRR7054140.Mapped.sorted.bam M=test.metric_SRR7054140.txt O=SRR7054140.Mapped.sorted_DupRmv.bam 2> MarkDup_SRR7054140.log
+picard MarkDuplicates REMOVE_DUPLICATES=true REMOVE_SEQUENCING_DUPLICATES=true AS=true I=SRR7054154.Mapped.sorted.bam M=test.metric_SRR7054154.txt O=SRR7054154.Mapped.sorted_DupRmv.bam 2> MarkDup_SRR7054154.log
+
+Indeksowanie:
+samtools index SRR7054140.Mapped.sorted_DupRmv.bam
+samtools index SRR7054154.Mapped.sorted_DupRmv.bam
+
+
+Łączenie:
+samtools merge -r C_pyg_22.bam SRR7054140.Mapped.sorted_DupRmv.bam SRR7054154.Mapped.sorted_DupRmv.bam
+samtools index C_pyg_22.bam
+
+
