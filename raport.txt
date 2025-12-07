@@ -1,64 +1,123 @@
-SAMPLES=/home/mkonczal/Teaching/GEiP/Data/SamplesLibraries.txt
-FASTQ_DIR=/home/mkonczal/Teaching/GEiP/Data/Fastq
-REF=/home/mkonczal/Teaching/GEiP/Data/Reference/SBS_final.scaffolds.fasta
+~:
+    /NVME/home/st6/
 
-f1=SRR7054140_pass_1.fastq.gz
-f2=SRR7054140_pass_2.fastq.gz
-f3=SRR7054154_pass_1.fastq.gz
-f4=SRR7054154_pass_2.fastq.gz
+~/.bashrc:
+    SAMPLES=/home/mkonczal/Teaching/GEiP/Data/SamplesLibraries.txt
+    FASTQ_DIR=/home/mkonczal/Teaching/GEiP/Data/Fastq
+    REF=/home/mkonczal/Teaching/GEiP/Data/Reference/SBS_final.scaffolds.fasta
+    
+    UCEprobe=/NVME/home/st6/GEiP/Lab2/uce-5k-probes.fasta
+    UCE=/NVME/home/st6/GEiP/Lab2/UCE_regions/forward/scaffold2_UCE_forward_orient_regions.txt
+    REF=/NVME/home/st6/GEiP/Lab1/scaffold2.fasta
+    BAM=/NVME/home/st6/GEiP/Lab1/C_pyg_22.bam
+    BCF=/NVME/home/st6/GEiP/Lab2/out.forward.bcf
+
+
+    f1=SRR7054140_pass_1.fastq.gz
+    f2=SRR7054140_pass_2.fastq.gz
+    f3=SRR7054154_pass_1.fastq.gz
+    f4=SRR7054154_pass_2.fastq.gz
 
 Lokalizacja:
-/NVME/home/st6/GEiP/Lab1
+    /NVME/home/st6/GEiP/Lab1
+
+
+Lab1:
 
 Wycięcie scaffold2:
-start=$(cat /home/mkonczal/Teaching/GEiP/Data/Reference/SBS_final.scaffolds.fasta | grep -n "scaffold2$" | cut -d ":" -f1)
-end=$(cat /home/mkonczal/Teaching/GEiP/Data/Reference/SBS_final.scaffolds.fasta | grep -n "scaffold3$" | cut -d ":" -f1)
-cat /home/mkonczal/Teaching/GEiP/Data/Reference/SBS_final.scaffolds.fasta | head -n $(expr 354863 - 1) | tail -n "$(expr 354863 - 177198)" > ./scaffold2.fasta
+    start=$(cat /home/mkonczal/Teaching/GEiP/Data/Reference/SBS_final.scaffolds.fasta | grep -n "scaffold2$" | cut -d ":" -f1)
+    end=$(cat /home/mkonczal/Teaching/GEiP/Data/Reference/SBS_final.scaffolds.fasta | grep -n "scaffold3$" | cut -d ":" -f1)
+    cat /home/mkonczal/Teaching/GEiP/Data/Reference/SBS_final.scaffolds.fasta | head -n $(expr 354863 - 1) | tail -n "$(expr 354863 - 177198)" > ./scaffold2.fasta
 
 
 Kontrola jakości:
-fastqc $f1 $f2
+    fastqc $f1 $f2
 
 Filtrowanie:
-fastp -i $f1 -I $f2 -o SRR7054140_pass_1.filt.fastq -O SRR7054140_pass_2.filt.fastq
-fastp -i $f3 -I $f4 -o SRR7054154_pass_1.filt.fastq -O SRR7054154_pass_2.filt.fastq
+    fastp -i $f1 -I $f2 -o SRR7054140_pass_1.filt.fastq -O SRR7054140_pass_2.filt.fastq
+    fastp -i $f3 -I $f4 -o SRR7054154_pass_1.filt.fastq -O SRR7054154_pass_2.filt.fastq
 
 Ponowna kontrola jakości:
-fastqc *.filt.fastq
+    fastqc *.filt.fastq
 
-
-Po kontroli poprawiła się jakości sekwencji, a także znacznie zmniejszona została liczba sekwencji z zanieczyszczenia starterem. Natomiast został nieco zaburzony rozkład długości sekwencji.
-SRR7054140_pass_1_fastqc.html vs SRR7054140_pass_1.filt_fastqc.html
-SRR7054140_pass_2_fastqc.html vs SRR7054140_pass_2.filt_fastqc.html
+    Po kontroli poprawiła się jakości sekwencji, a także znacznie zmniejszona została liczba sekwencji z zanieczyszczenia starterem. Natomiast został nieco zaburzony rozkład długości sekwencji.
+        SRR7054140_pass_1_fastqc.html vs SRR7054140_pass_1.filt_fastqc.html
+        SRR7054140_pass_2_fastqc.html vs SRR7054140_pass_2.filt_fastqc.html
 
 
 Indeksowanie:
-bwa index scaffold2.fasta
+    bwa index scaffold2.fasta
 
 Mapowanie:
-bwa mem -t 5 -R '@RG\tID:SRR7054140\tSM:C_pyg_22\tLB:SRR7054140\tPL:ILLUMINA\tPU:lib1_unit' scaffold2.fasta SRR7054140_pass_1.filt.fastq SRR7054140_pass_2.filt.fastq | samtools view -F 4 -o SRR7054140.Mapped.bam
-bwa mem -t 5 -R '@RG\tID:SRR7054154\tSM:C_pyg_22\tLB:SRR7054154\tPL:ILLUMINA\tPU:lib1_unit' scaffold2.fasta SRR7054154_pass_1.filt.fastq SRR7054154_pass_2.filt.fastq | samtools view -Sb -F 4 -o SRR7054154.Mapped.bam
+    bwa mem -t 5 -R '@RG\tID:SRR7054140\tSM:C_pyg_22\tLB:SRR7054140\tPL:ILLUMINA\tPU:lib1_unit' scaffold2.fasta SRR7054140_pass_1.filt.fastq SRR7054140_pass_2.filt.fastq | samtools view -F 4 -o SRR7054140.Mapped.bam
+    bwa mem -t 5 -R '@RG\tID:SRR7054154\tSM:C_pyg_22\tLB:SRR7054154\tPL:ILLUMINA\tPU:lib1_unit' scaffold2.fasta SRR7054154_pass_1.filt.fastq SRR7054154_pass_2.filt.fastq | samtools view -Sb -F 4 -o SRR7054154.Mapped.bam
 
-Parametr -R bwa mem wybiera odczyty o konkretnym nagłówku.
-Parametr -F samtools view wybiera odczyty bez flag określonych przez podaną liczbę.
-Operator | przekazuje STDOUT pierwszego poprzedzającego polecenia do STDIN następnego polecenia, więc w naszym przypadku, przekazuje wyniki z bwa mem jako dane wejściowe do samtools view.
+    Parametr -R bwa mem wybiera odczyty o konkretnym nagłówku.
+    Parametr -F samtools view wybiera odczyty bez flag określonych przez podaną liczbę.
+    Operator | przekazuje STDOUT pierwszego poprzedzającego polecenia do STDIN następnego polecenia, więc w naszym przypadku, przekazuje wyniki z bwa mem jako dane wejściowe do samtools view.
 
 
 Sortowanie:
-samtools sort -T bam SRR7054140.Mapped.bam > SRR7054140.Mapped.sorted.bam
-samtools sort -T bam SRR7054154.Mapped.bam > SRR7054154.Mapped.sorted.bam
+    samtools sort -T bam SRR7054140.Mapped.bam > SRR7054140.Mapped.sorted.bam
+    samtools sort -T bam SRR7054154.Mapped.bam > SRR7054154.Mapped.sorted.bam
 
 Usuwanie duplikatów:
-picard MarkDuplicates REMOVE_DUPLICATES=true REMOVE_SEQUENCING_DUPLICATES=true AS=true I=SRR7054140.Mapped.sorted.bam M=test.metric_SRR7054140.txt O=SRR7054140.Mapped.sorted_DupRmv.bam 2> MarkDup_SRR7054140.log
-picard MarkDuplicates REMOVE_DUPLICATES=true REMOVE_SEQUENCING_DUPLICATES=true AS=true I=SRR7054154.Mapped.sorted.bam M=test.metric_SRR7054154.txt O=SRR7054154.Mapped.sorted_DupRmv.bam 2> MarkDup_SRR7054154.log
+    picard MarkDuplicates REMOVE_DUPLICATES=true REMOVE_SEQUENCING_DUPLICATES=true AS=true I=SRR7054140.Mapped.sorted.bam M=test.metric_SRR7054140.txt O=SRR7054140.Mapped.sorted_DupRmv.bam 2> MarkDup_SRR7054140.log
+    picard MarkDuplicates REMOVE_DUPLICATES=true REMOVE_SEQUENCING_DUPLICATES=true AS=true I=SRR7054154.Mapped.sorted.bam M=test.metric_SRR7054154.txt O=SRR7054154.Mapped.sorted_DupRmv.bam 2> MarkDup_SRR7054154.log
 
 Indeksowanie:
-samtools index SRR7054140.Mapped.sorted_DupRmv.bam
-samtools index SRR7054154.Mapped.sorted_DupRmv.bam
+    samtools index SRR7054140.Mapped.sorted_DupRmv.bam
+    samtools index SRR7054154.Mapped.sorted_DupRmv.bam
 
 
 Łączenie:
-samtools merge -r C_pyg_22.bam SRR7054140.Mapped.sorted_DupRmv.bam SRR7054154.Mapped.sorted_DupRmv.bam
-samtools index C_pyg_22.bam
+    samtools merge -r C_pyg_22.bam SRR7054140.Mapped.sorted_DupRmv.bam SRR7054154.Mapped.sorted_DupRmv.bam
+
+    samtools index C_pyg_22.bam
 
 
+Lab2:
+
+mkdir Lab2 && cd Lab2
+mkdir scaffold2 && cd scaffold2
+
+faToTwoBit ../../Lab1/scaffold2.fasta scaffold2.2bit
+twoBitInfo scaffold2.2bit sizes.tab
+
+cd ..
+cp /home/mkonczal/Teaching/GEiP/Data/UCE-probes/uce-5k-probes.fasta .
+samtools faidx uce-5k-probes.fasta
+bwa index uce-5k-probes.fasta
+
+phyluce_probe_run_multiple_lastzs_sqlite --db scaffold2.sqlite --output scaffold2-genome-lastz --scaffoldlist scaffold2 --genome-base-path ./ --probefile ${UCEprobe} --cores 5
+nano scaffold2.conf
+phyluce_probe_slice_sequence_from_genomes --lastz scaffold2-genome-lastz --flank 1000 --output OUT --conf scaffold2.conf --name-pattern uce-5k-probes.fasta_v_scaffold2.lastz.clean
+
+mkdir UCE_regions
+grep "uce" OUT/scaffold2.fasta | cut -d '|' -f 2,3,4,6 | sed -e 's/|/\t/g' | sed -e 's/contig://g' | sed -e 's/slice://g'| sed -e 's/uce://g' | sed -e 's/orient://g' | sed -e 's/uce-/uce_/g' | sed -e s/"'"//g | sed -e 's/{+}/forward/g' | sed -e 's/{-}/reverse/g'| sed -e 's/-/\t/g' > UCE_regions/scaffold2_UCE_regions.txt
+
+mkdir UCE_regions/forward
+mkdir UCE_regions/reverse
+grep 'forward' UCE_regions/scaffold2_UCE_regions.txt | cut -f 1,2,3 > UCE_regions/forward/scaffold2_UCE_forward_orient_regions.txt
+grep 'reverse' UCE_regions/scaffold2_UCE_regions.txt | cut -f 1,2,3 > UCE_regions/reverse/scaffold2_UCE_reverse_orient_regions.txt
+
+samtools mpileup -l ${UCE} -f ${REF} ${BAM} > out.forward.mpileup
+bcftools mpileup --threads 5 -Ou -Q 20 -q 20 -C 50 -a AD,DP -R ${UCE} -f ${REF} ${BAM} | bcftools call --threads 10 -c -Ob > out.forward.bcf
+
+bcftools convert -O v -o tmp.vcf out.forward.bcf
+
+nano bam_list.txt
+bcftools mpileup --threads 10 -Ou -Q 20 -q 20 -C 50 -a AD,DP -R ${UCE} -f ${REF} -b bam_list.txt | bcftools call --threads 10 -c -Ob > out.forward_2samples.bcf
+
+
+Zadanie:
+    out.forward_2samples.bcf: 2810 linii, 447 KiB na osobnika
+    out.forward.bcf: 2842 linie, 893 KiB na osobnika
+
+
+bcftools query -f '%QUAL\t%MQ\t%DP\n' ${BCF} > Stats_QualMQDP.txt
+bcftools stats ${BCF} > Stats.stat.txt
+
+Stats_QualMQDP_INDV_NAME.png
+
+bcftools view -v snps -e 'QUAL < 60 || MQ < 30 || FORMAT/DP < 4 || FORMAT/DP > 20' out.forward.bcf > out.forward.filtered.vcf
