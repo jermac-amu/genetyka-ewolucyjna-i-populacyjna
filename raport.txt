@@ -5,29 +5,53 @@
     SAMPLES=/home/mkonczal/Teaching/GEiP/Data/SamplesLibraries.txt
     FASTQ_DIR=/home/mkonczal/Teaching/GEiP/Data/Fastq
     REF=/home/mkonczal/Teaching/GEiP/Data/Reference/SBS_final.scaffolds.fasta
-    
-    UCEprobe=/NVME/home/st6/GEiP/Lab2/uce-5k-probes.fasta
-    UCE=/NVME/home/st6/GEiP/Lab2/UCE_regions/forward/scaffold2_UCE_forward_orient_regions.txt
-    REF=/NVME/home/st6/GEiP/Lab1/scaffold2.fasta
-    BAM=/NVME/home/st6/GEiP/Lab1/C_pyg_22.bam
-    BCF=/NVME/home/st6/GEiP/Lab2/out.forward.bcf
-
 
     f1=SRR7054140_pass_1.fastq.gz
     f2=SRR7054140_pass_2.fastq.gz
     f3=SRR7054154_pass_1.fastq.gz
     f4=SRR7054154_pass_2.fastq.gz
 
+    fr1=SRR7054138_pass_1.fastq.gz
+    fr2=SRR7054138_pass_2.fastq.gz
+    fr3=SRR7054157_pass_1.fastq.gz
+    fr4=SRR7054157_pass_2.fastq.gz
+    
+    UCEprobe=/NVME/home/st6/GEiP/Lab2/uce-5k-probes.fasta
+    UCE=/NVME/home/st6/GEiP/Lab2/UCE_regions/forward/scaffold2_UCE_forward_orient_regions.txt
+    REF=/NVME/home/st6/GEiP/Lab1/scaffold2.fasta
+    BAM=/NVME/home/st6/GEiP/Lab1/C_pyg_22.bam
+    BCF=/NVME/home/st6/GEiP/Lab2/out.forward.bcf
+    galgal=/home/mkonczal/Teaching/GEiP/Data/galGal6
+    scores=/home/mkonczal/Teaching/GEiP/utilities/HoxD55
+    hom_chicken_chr=2
+    alignment=bGalGal6_chr${hom_chicken_chr}_imported.axt
+    chicken_2bit=${galgal}/Gallus_gallus.GRCg6a.dna_rm.toplevel.2bit
+    biegus_2bit=scaffold2.2bit
+
+    chCADD_dir=/home/mkonczal/Teaching/GEiP/Data/chCADD-scores
+
 Lokalizacja:
-    /NVME/home/st6/GEiP/Lab1
+    /NVME/home/st6/GEiP/
 
 
 Lab1:
 
+cd Lab1
+
+ln -s $FASTQ_DIR/SRR7054138/SRR7054138_pass_1.fastq.gz .
+ln -s $FASTQ_DIR/SRR7054138/SRR7054138_pass_2.fastq.gz .
+ln -s $FASTQ_DIR/SRR7054157/SRR7054157_pass_1.fastq.gz .
+ln -s $FASTQ_DIR/SRR7054157/SRR7054157_pass_2.fastq.gz .
+
+ln -s $FASTQ_DIR/SRR7054140/SRR7054140_pass_1.fastq.gz .
+ln -s $FASTQ_DIR/SRR7054140/SRR7054140_pass_2.fastq.gz .
+ln -s $FASTQ_DIR/SRR7054154/SRR7054154_pass_1.fastq.gz .
+ln -s $FASTQ_DIR/SRR7054154/SRR7054154_pass_2.fastq.gz .
+
 Wycięcie scaffold2:
     start=$(cat /home/mkonczal/Teaching/GEiP/Data/Reference/SBS_final.scaffolds.fasta | grep -n "scaffold2$" | cut -d ":" -f1)
     end=$(cat /home/mkonczal/Teaching/GEiP/Data/Reference/SBS_final.scaffolds.fasta | grep -n "scaffold3$" | cut -d ":" -f1)
-    cat /home/mkonczal/Teaching/GEiP/Data/Reference/SBS_final.scaffolds.fasta | head -n $(expr 354863 - 1) | tail -n "$(expr 354863 - 177198)" > ./scaffold2.fasta
+    cat /home/mkonczal/Teaching/GEiP/Data/Reference/SBS_final.scaffolds.fasta | head -n $(expr $end - 1) | tail -n "$(expr $end - $start)" > ./scaffold2.fasta
 
 
 Kontrola jakości:
@@ -36,6 +60,8 @@ Kontrola jakości:
 Filtrowanie:
     fastp -i $f1 -I $f2 -o SRR7054140_pass_1.filt.fastq -O SRR7054140_pass_2.filt.fastq
     fastp -i $f3 -I $f4 -o SRR7054154_pass_1.filt.fastq -O SRR7054154_pass_2.filt.fastq
+    fastp -i $fr1 -I $fr2 -o SRR7054138_pass_1.filt.fastq -O SRR7054138_pass_2.filt.fastq
+    fastp -i $fr3 -I $fr4 -o SRR7054157_pass_1.filt.fastq -O SRR7054157_pass_2.filt.fastq
 
 Ponowna kontrola jakości:
     fastqc *.filt.fastq
@@ -51,6 +77,8 @@ Indeksowanie:
 Mapowanie:
     bwa mem -t 5 -R '@RG\tID:SRR7054140\tSM:C_pyg_22\tLB:SRR7054140\tPL:ILLUMINA\tPU:lib1_unit' scaffold2.fasta SRR7054140_pass_1.filt.fastq SRR7054140_pass_2.filt.fastq | samtools view -F 4 -o SRR7054140.Mapped.bam
     bwa mem -t 5 -R '@RG\tID:SRR7054154\tSM:C_pyg_22\tLB:SRR7054154\tPL:ILLUMINA\tPU:lib1_unit' scaffold2.fasta SRR7054154_pass_1.filt.fastq SRR7054154_pass_2.filt.fastq | samtools view -Sb -F 4 -o SRR7054154.Mapped.bam
+    bwa mem -t 5 -R '@RG\tID:SRR7054138\tSM:C_ruf_08\tLB:SRR7054138\tPL:ILLUMINA\tPU:lib1_unit' scaffold2.fasta SRR7054138_pass_1.filt.fastq SRR7054138_pass_2.filt.fastq | samtools view -F 4 -o SRR7054138.Mapped.bam
+    bwa mem -t 5 -R '@RG\tID:SRR7054157\tSM:C_ruf_08\tLB:SRR7054157\tPL:ILLUMINA\tPU:lib1_unit' scaffold2.fasta SRR7054157_pass_1.filt.fastq SRR7054157_pass_2.filt.fastq | samtools view -F 4 -o SRR7054157.Mapped.bam
 
     Parametr -R bwa mem wybiera odczyty o konkretnym nagłówku.
     Parametr -F samtools view wybiera odczyty bez flag określonych przez podaną liczbę.
@@ -60,20 +88,28 @@ Mapowanie:
 Sortowanie:
     samtools sort -T bam SRR7054140.Mapped.bam > SRR7054140.Mapped.sorted.bam
     samtools sort -T bam SRR7054154.Mapped.bam > SRR7054154.Mapped.sorted.bam
+    samtools sort -T bam SRR7054138.Mapped.bam > SRR7054138.Mapped.sorted.bam
+    samtools sort -T bam SRR7054157.Mapped.bam > SRR7054157.Mapped.sorted.bam
 
 Usuwanie duplikatów:
     picard MarkDuplicates REMOVE_DUPLICATES=true REMOVE_SEQUENCING_DUPLICATES=true AS=true I=SRR7054140.Mapped.sorted.bam M=test.metric_SRR7054140.txt O=SRR7054140.Mapped.sorted_DupRmv.bam 2> MarkDup_SRR7054140.log
     picard MarkDuplicates REMOVE_DUPLICATES=true REMOVE_SEQUENCING_DUPLICATES=true AS=true I=SRR7054154.Mapped.sorted.bam M=test.metric_SRR7054154.txt O=SRR7054154.Mapped.sorted_DupRmv.bam 2> MarkDup_SRR7054154.log
+    picard MarkDuplicates REMOVE_DUPLICATES=true REMOVE_SEQUENCING_DUPLICATES=true AS=true I=SRR7054138.Mapped.sorted.bam M=test.metric_SRR7054138.txt O=SRR7054138.Mapped.sorted_DupRmv.bam 2> MarkDup_SRR7054138.log
+    picard MarkDuplicates REMOVE_DUPLICATES=true REMOVE_SEQUENCING_DUPLICATES=true AS=true I=SRR7054157.Mapped.sorted.bam M=test.metric_SRR7054157.txt O=SRR7054157.Mapped.sorted_DupRmv.bam 2> MarkDup_SRR7054157.log
 
 Indeksowanie:
     samtools index SRR7054140.Mapped.sorted_DupRmv.bam
     samtools index SRR7054154.Mapped.sorted_DupRmv.bam
+    samtools index SRR7054138.Mapped.sorted_DupRmv.bam
+    samtools index SRR7054157.Mapped.sorted_DupRmv.bam
 
 
 Łączenie:
     samtools merge -r C_pyg_22.bam SRR7054140.Mapped.sorted_DupRmv.bam SRR7054154.Mapped.sorted_DupRmv.bam
+    samtools merge -r C_ruf_08.bam SRR7054138.Mapped.sorted_DupRmv.bam SRR7054157.Mapped.sorted_DupRmv.bam
 
     samtools index C_pyg_22.bam
+    samtools index C_ruf_08.bam
 
 
 Lab2:
@@ -103,6 +139,7 @@ grep 'reverse' UCE_regions/scaffold2_UCE_regions.txt | cut -f 1,2,3 > UCE_region
 
 samtools mpileup -l ${UCE} -f ${REF} ${BAM} > out.forward.mpileup
 bcftools mpileup --threads 5 -Ou -Q 20 -q 20 -C 50 -a AD,DP -R ${UCE} -f ${REF} ${BAM} | bcftools call --threads 10 -c -Ob > out.forward.bcf
+bcftools mpileup --threads 5 -Ou -Q 20 -q 20 -C 50 -a AD,DP -R $UCE -f $REF ../Lab1/C_ruf_08.bam | bcftools call --threads 10 -c -Ob > out2.forward.bcf
 
 bcftools convert -O v -o tmp.vcf out.forward.bcf
 
@@ -111,13 +148,66 @@ bcftools mpileup --threads 10 -Ou -Q 20 -q 20 -C 50 -a AD,DP -R ${UCE} -f ${REF}
 
 
 Zadanie:
-    out.forward_2samples.bcf: 2810 linii, 447 KiB na osobnika
-    out.forward.bcf: 2842 linie, 893 KiB na osobnika
+    out.forward_2samples.bcf: 9459 linii, 800 MiB na osobnika
+    out.forward.bcf: 2842 linie, 893 KiB
+    out2.forward.bcf: 3670 linii, 1.1 MiB
 
 
 bcftools query -f '%QUAL\t%MQ\t%DP\n' ${BCF} > Stats_QualMQDP.txt
+bcftools query -f '%QUAL\t%MQ\t%DP\n' out2.forward.bcf > Stats2_QualMQDP.txt
 bcftools stats ${BCF} > Stats.stat.txt
+bcftools stats out2.forward.bcf > Stats2.stat.txt
 
 Stats_QualMQDP_INDV_NAME.png
+Stats2_QualMQDP_INDV_NAME.png
 
 bcftools view -v snps -e 'QUAL < 60 || MQ < 30 || FORMAT/DP < 4 || FORMAT/DP > 20' out.forward.bcf > out.forward.filtered.vcf
+bcftools view -v snps -e 'QUAL < 60 || MQ < 30 || FORMAT/DP < 4 || FORMAT/DP > 20' out2.forward.bcf > out2.forward.filtered.vcf
+
+
+Lab 3:
+
+mkdir Lab3 && cd Lab3
+ln -s ../Lab1/scaffold2.fasta* .
+
+blastn -query scaffold2.fasta -db ${galgal}/Gallus_gallus.GRCg6a.dna_rm.toplevel.fa -outfmt 6 > Scaffold2Chicken.blastout
+
+#lastz ${galgal}/split/${hom_chicken_chr}.fa scaffold2.fasta --ambiguous=iupac --hspthresh=2200 --inner=2000 --ydrop=3400 --gappedthresh=10000 --scores=${scores} --chain --format=axt > bGalGal6_chr${hom_chicken_chr}.axt
+cp /home/mkonczal/Lab3/bGalGal6_chr2.axt ./bGalGal6_chr2_imported.axt
+
+faToTwoBit scaffold2.fasta scaffold2.2bit
+axtChain -minscore=5000 -linearGap=loose $alignment $chicken_2bit $biegus_2bit bgalgalChr${hom_chicken_chr}_scaff2.chain
+chainSort bgalgalChr${hom_chicken_chr}_scaff2.chain sorted_bgalgalChr${hom_chicken_chr}_scaff2.chain
+
+grep "chain" sorted_bgalgalChr${hom_chicken_chr}_scaff2.chain -c
+    1547 łańcuchów
+
+start=$(cat $galgal/Gallus_gallus.GRCg6a.dna_rm.toplevel.fa | grep -n "^>2\s" | cut -d ":" -f1)
+end=$(cat $galgal/Gallus_gallus.GRCg6a.dna_rm.toplevel.fa | grep -n "^>3\s" | cut -d ":" -f1)
+cat $galgal/Gallus_gallus.GRCg6a.dna_rm.toplevel.fa | head -n $(expr $end - 1) | tail -n "$(expr $end - $start)" > gallus_gallus_2.fa
+
+twoBitInfo scaffold2.2bit scaffold2.chrom.size
+
+faToTwoBit gallus_gallus_2.fa gallus_gallus_2.2bit
+twoBitInfo gallus_gallus_2.2bit gallus_gallus_2.chrom.size
+
+chainNet sorted_bgalgalChr${hom_chicken_chr}_scaff2.chain gallus_gallus_2.chrom.size scaffold2.chrom.size all.net /dev/null
+
+netChainSubset all.net sorted_bgalgalChr${hom_chicken_chr}_scaff2.chain galGalChr${hom_chicken_chr}ToSBS_Scaff2.over.chain
+
+Zostało usuniętych 1207 łańcuchów.
+
+gzip galGalChr${hom_chicken_chr}ToSBS_Scaff2.over.chain
+
+
+mkdir chCADD && cd chCADD
+
+cp ${chCADD_dir}/Header.txt .
+cp ${chCADD_dir}/2.txt.gz .
+cat Header.txt > chr2_chCADD.tsv
+zcat 2.txt.gz >> chr2_chCADD.tsv
+
+awk '{print $1,$2-1,$2,$3,$4,$5}' chr2_chCADD.tsv > chr2_chCADD.1based.bed
+
+CrossMap bed galGalChr${hom_chicken_chr}ToSBS_Scaff2.over.chain.gz chCADD/chr${hom_chicken_chr}_chCADD.1based.bed | grep scaffold2 | grep -v "Unmap" | cut -f 3,4,5,6,7,8 > chr${hom_chicken_chr}-SBS_CADD.bed
+
