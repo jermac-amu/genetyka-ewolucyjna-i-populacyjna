@@ -30,6 +30,16 @@
 
     chCADD_dir=/home/mkonczal/Teaching/GEiP/Data/chCADD-scores
 
+    VCF1_f=/NVME/home/st6/GEiP/Lab2/out.forward.filtered.vcf
+    VCF2_f=/NVME/home/st6/GEiP/Lab2/out2.forward.filtered.vcf
+
+    CADD=/NVME/home/st6/GEiP/Lab3/chr2-SBS_CADD.bed
+    bed1=/NVME/home/st6/GEiP/Lab4/C_pyg_22/vcf_C_pyg_22_forward_indelRm.bed
+    bed2=/NVME/home/st6/GEiP/Lab4/C_ruf_08/vcf_C_ruf_08_forward_indelRm.bed
+
+    script_path=/home/mkonczal/Teaching/GEiP/scripts
+
+
 Lokalizacja:
     /NVME/home/st6/GEiP/
 
@@ -211,3 +221,81 @@ awk '{print $1,$2-1,$2,$3,$4,$5}' chr2_chCADD.tsv > chr2_chCADD.1based.bed
 
 CrossMap bed galGalChr${hom_chicken_chr}ToSBS_Scaff2.over.chain.gz chCADD/chr${hom_chicken_chr}_chCADD.1based.bed | grep scaffold2 | grep -v "Unmap" | cut -f 3,4,5,6,7,8 > chr${hom_chicken_chr}-SBS_CADD.bed
 
+
+Lab 4:
+
+mkdir Lab4 && cd Lab4
+mkdir C_pyg_22 C_ruf_08
+
+vcf2bed --max-mem 4G < $VCF1_f > C_pyg_22/vcf_C_pyg_22_forward.bed
+vcf2bed --max-mem 4G < $VCF2_f > C_ruf_08/vcf_C_ruf_08_forward.bed
+
+grep -v "INDEL" C_pyg_22/vcf_C_pyg_22_forward.bed > C_pyg_22/vcf_C_pyg_22_forward_indelRm.bed
+grep -v "INDEL" C_ruf_08/vcf_C_ruf_08_forward.bed > C_ruf_08/vcf_C_ruf_08_forward_indelRm.bed
+
+bedtools intersect -a $CADD -b $bed1 -wa -wb > C_pyg_22/vcf_C_pyg_22_forward_indelRm_intersect.bed
+bedtools intersect -a $CADD -b $bed2 -wa -wb > C_ruf_08/vcf_C_ruf_08_forward_indelRm_intersect.bed
+
+awk -v b=6 -v e=100 -f ${script_path}/SNP_check_forward.awk C_pyg_22/vcf_C_pyg_22_forward_indelRm_intersect.bed > C_pyg_22/vcf_C_pyg_22_forward_indelRm_intersect_annotated.bed
+awk -v b=6 -v e=100 -f ${script_path}/SNP_check_forward.awk C_ruf_08/vcf_C_ruf_08_forward_indelRm_intersect.bed > C_ruf_08/vcf_C_ruf_08_forward_indelRm_intersect_annotated.bed
+
+Brak orientacji reverse
+
+awk '$22 == "SNP_is_ALT_pp=ref"' C_pyg_22/vcf_C_pyg_22_forward_indelRm_intersect_annotated.bed > C_pyg_22/vcf_C_pyg_22_forward_indelRm_intersect_annotated_SNP_is_alt.bed
+awk '$22 == "SNP_is_ALT_pp=ref"' C_ruf_08/vcf_C_ruf_08_forward_indelRm_intersect_annotated.bed > C_ruf_08/vcf_C_ruf_08_forward_indelRm_intersect_annotated_SNP_is_alt.bed
+
+Sumaryczny CADD w homozygotach ref:
+    C_pyg_22: -
+    C_ruf_08: -
+
+Sumaryczny CADD w heterozygotach:
+    C_pyg_22: 112.59270
+    C_ruf_08: 277.02110
+
+Sumaryczny CADD w homozygotach alt:
+    C_pyg_22: 84.1612
+    C_ruf_08: 807.66481
+
+
+Pytania:
+    1.
+        C_pyg_22: 43
+        C_ruf_08: 271
+
+    2.
+        C_pyg_22: 18 homozygot, 25 heterozygot
+        C_ruf_08: 194 homozygoty, 77 heterozygot
+
+    3.
+        C_pyg_22: średni CADD ok. 4.58
+        C_ruf_08: średni CADD ok. 4.0
+        Wartości CADD są wyższe u biegusa łyżkodziobego, ale nie w znaczącym stopniu.
+
+    4.
+        CADD:
+        gat.    homozyg.    heterozyg.  p.val
+        pyg_22  4.68        4.5         0.921
+        ruf_08  4.16        3.6         0.327
+
+        Nie, CADD nie różni się znacząco pomiędzy homozygotami a heterozygotami. Prawdopodobnie rozmiar próby jest zbyt niewielki, aby różnice były statystycznie znaczące.
+
+    5.
+        C_pyg_22:
+            Obciążenie całkowite:
+                84.16 + 112.59 * 0.5 = 140.45
+
+            Obciążenie zrealizowane:
+                84.16 + 112.59 * 0.1 = 95.42
+
+        C_ruf_08:
+            Obciążenie całkowite:
+                807.66 + 277.02 * 0.5 = 946.17
+
+            Obciążenie zrealizowane:
+                807.66 + 277.02 * 0.1 = 835.36
+
+    6.
+        Visualization_C_pyg_22.png
+        Visualization_C_ruf_08.png
+
+        Nie ma wyraźnej korelacji pomiędzy wartością CADD a pozycją SNP na chromosomie.
